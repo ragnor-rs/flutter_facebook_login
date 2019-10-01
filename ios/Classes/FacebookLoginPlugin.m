@@ -54,22 +54,10 @@
 
 - (void)handleMethodCall:(FlutterMethodCall *)call
                   result:(FlutterResult)result {
-  if ([@"loginWithReadPermissions" isEqualToString:call.method]) {
-    FBSDKLoginBehavior behavior =
-        [self loginBehaviorFromString:call.arguments[@"behavior"]];
+  if ([@"logIn" isEqualToString:call.method]) {
     NSArray *permissions = call.arguments[@"permissions"];
 
-    [self loginWithReadPermissions:behavior
-                       permissions:permissions
-                            result:result];
-  } else if ([@"loginWithPublishPermissions" isEqualToString:call.method]) {
-    FBSDKLoginBehavior behavior =
-        [self loginBehaviorFromString:call.arguments[@"behavior"]];
-    NSArray *permissions = call.arguments[@"permissions"];
-
-    [self loginWithPublishPermissions:behavior
-                          permissions:permissions
-                               result:result];
+    [self loginWithPermissions:permissions result:result];
   } else if ([@"logOut" isEqualToString:call.method]) {
     [self logOut:result];
   } else if ([@"getCurrentAccessToken" isEqualToString:call.method]) {
@@ -91,24 +79,8 @@
   }
 }
 
-- (FBSDKLoginBehavior)loginBehaviorFromString:(NSString *)loginBehaviorStr {
-  if ([@[ @"nativeWithFallback", @"nativeOnly", @"webViewOnly", @"webOnly" ]
-          containsObject:loginBehaviorStr]) {
-    return FBSDKLoginBehaviorBrowser;
-  } else {
-    NSString *message = [NSString
-        stringWithFormat:@"Unknown login behavior: %@", loginBehaviorStr];
-
-    @throw [NSException exceptionWithName:@"InvalidLoginBehaviorException"
-                                   reason:message
-                                 userInfo:nil];
-  }
-}
-
-- (void)loginWithReadPermissions:(FBSDKLoginBehavior)behavior
-                     permissions:(NSArray *)permissions
+- (void)loginWithPermissions:(NSArray *)permissions
                           result:(FlutterResult)result {
-  [loginManager setLoginBehavior:behavior];
   [loginManager
       logInWithPermissions:permissions
             fromViewController:nil
@@ -118,21 +90,6 @@
                                           result:result
                                            error:error];
                        }];
-}
-
-- (void)loginWithPublishPermissions:(FBSDKLoginBehavior)behavior
-                        permissions:(NSArray *)permissions
-                             result:(FlutterResult)result {
-  [loginManager setLoginBehavior:behavior];
-  [loginManager
-      logInWithPermissions:permissions
-               fromViewController:nil
-                          handler:^(FBSDKLoginManagerLoginResult *loginResult,
-                                    NSError *error) {
-                            [self handleLoginResult:loginResult
-                                             result:result
-                                              error:error];
-                          }];
 }
 
 - (void)logOut:(FlutterResult)result {
@@ -208,7 +165,7 @@
   NSArray *permissions = [accessToken.permissions allObjects];
   NSArray *declinedPermissions = [accessToken.declinedPermissions allObjects];
   NSNumber *expires = [NSNumber
-      numberWithLong:accessToken.expirationDate.timeIntervalSince1970 * 1000.0];
+      numberWithLongLong:accessToken.expirationDate.timeIntervalSince1970 * 1000.0];
 
   return @{
     @"token" : accessToken.tokenString,
